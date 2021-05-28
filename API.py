@@ -2,10 +2,69 @@ import requests
 import json
 import time
 import os
-YA_DISK_TOKEN = ''
-VK_TOKEN = ""
 
+def get_yandex_token():
+    global YA_DISK_TOKEN
+    user_choise = input("Как вы хотите загрузить данные токена Я.Диска (р - вручную, ф - из файла)? ").lower()
+    while user_choise != "р" and user_choise != 'ф':
+        print("Ошибка, попробуйте еще раз.")
+        user_choise = input("Как вы хотите загрузить данные токена Я.Диска (р - вручную, ф - из файла)? ").lower()
+    if user_choise == 'р':
+        YA_DISK_TOKEN = input("Введите значение токена: ")
+    else:
+        file_name = "YA_TOKEN.txt"
+        try:
+            with open(file_name, 'r') as file_to_read:
+                YA_DISK_TOKEN = file_to_read.readline()
+        except FileNotFoundError:
+            print("Файл не найден. Ваш токен должен содержаться однострочно в файле с названием YA_TOKEN.txt")
+            get_yandex_token()
+    headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'OAuth {YA_DISK_TOKEN}'}
+    response = requests.get('https://cloud-api.yandex.net/v1/disk', headers=headers)
+    if response.status_code == 200:
+        print('Токен прошел проверку и принят для дальнейшего использования')
+        return YA_DISK_TOKEN
+    else:
+        print("Ошибка, попробуйте ввести данные токена заново")
+        get_yandex_token()
+
+def get_vk_token():
+    global VK_TOKEN
+    user_choise = input("Как вы хотите загрузить данные токена VK (р - вручную, ф - из файла)? ").lower()
+    while user_choise != "р" and user_choise != 'ф':
+        print("Ошибка, попробуйте еще раз")
+        user_choise = input("Как вы хотите загрузить данные токена Я.Диска (р - вручную, ф - из файла)? ").lower()
+    if user_choise == 'р':
+        VK_TOKEN = input("Введите значение токена: ")
+    else:
+        file_name = "VK_TOKEN.txt"
+        try:
+            with open(file_name, 'r') as file_to_read:
+                VK_TOKEN = file_to_read.readline()
+        except FileNotFoundError:
+            print("Файл не найден. Ваш токен должен содержаться однострочно в файле с названием VK_TOKEN.txt")
+            get_vk_token()
+    params = {
+        'user_id': '1',
+        'access_token': VK_TOKEN,
+        'v': '5.130',
+    }
+    response = requests.get('https://api.vk.com/method/users.get', params=params)
+    try:
+        if response.json()['response'][0]['first_name'] == "Павел":
+            print('Токен прошел проверку и принят для дальнейшего использования!')
+            return VK_TOKEN
+    except:
+        print("Ошибка! C токеном что-то не так, попробуйте еще раз")
+        get_vk_token()
+
+VK_TOKEN = get_vk_token()
+
+YANDEX_TOKEN = get_yandex_token()
 def menu():
+    print()
     print("МЕНЮ")
     print("Список доступных команд:")
     print('d - скачать фотографии пользователя на Я.Диск')
@@ -41,6 +100,7 @@ class VKuser:
             'access_token': VK_TOKEN,
             'v': '5.130',
         }
+        time.sleep(1)
         response = requests.get(url, params=params).json()
         name = f"Имя: {response['response'][0]['first_name']}\nФамилия: {response['response'][0]['last_name']}"
         return name
@@ -63,7 +123,7 @@ class VKuser:
     def get_headers_ya_disk(self):
         return {
             'Content-Type': 'application/json',
-            'Authorization': f'OAuth {YA_DISK_TOKEN}'}
+            'Authorization': f'OAuth {YANDEX_TOKEN}'}
 
     # функция для создания папки на Я.Диске с названием - id пользователя
     def create_folder(self):
