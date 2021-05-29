@@ -72,7 +72,11 @@ def menu():
     print('c - ввести нового пользователя')
     print('exit - выйти из программы')
     user = VKuser(input('Введите id пользователя: '))
-    print(user.represent())
+    try:
+        print(user.represent())
+    except KeyError:
+        print("Пользователя с таким id не существует! Проверьте правильность ввода")
+        menu()
     choise = 0
     while choise != exit:
         choise = input('Введите необходимую команду: ').lower()
@@ -100,8 +104,7 @@ class VKuser:
             'access_token': VK_TOKEN,
             'v': '5.130',
         }
-        time.sleep(1)
-        response = requests.get(url, params=params).json()
+        response = requests.get(url, params=params, timeout=1).json()
         name = f"Имя: {response['response'][0]['first_name']}\nФамилия: {response['response'][0]['last_name']}"
         return name
 
@@ -141,7 +144,6 @@ class VKuser:
         response = self.make_a_responce()
         total_profile_photos = len(response['response']['items'])
         for photo in range(total_profile_photos):
-            time.sleep(1)
             list1.append(dict(size=response['response']['items'][photo]['sizes'][self.get_max_size(photo)]['type'],
                               file_name=str(response['response']['items'][photo]['likes']['count'])+'.jpg'))
         file_path = os.path.join(os.getcwd(), f'id{self.vk_id}.json')
@@ -152,8 +154,8 @@ class VKuser:
     # функция для определения URL фото с максимальным разрешением
     def get_max_size(self, photo):
         list_of_sizes = []
+        time.sleep(1)
         response = self.make_a_responce()
-        time.sleep(0.1)
         total = len(response['response']['items'][photo]['sizes'])
         for i in range(total):
             height = response['response']['items'][photo]['sizes'][i]['height']
@@ -172,7 +174,6 @@ class VKuser:
         date_upload = []
         response = self.make_a_responce()
         total_profile_photos = len(response['response']['items'])
-        time.sleep(0.1)
         for photo in range(total_profile_photos):
             # для получения ссылки на фото в максимальном разрешении воспользуемся функцией get_max_size
             photos_url.append(response['response']['items'][photo]['sizes'][self.get_max_size(photo)]['url'])
@@ -192,7 +193,7 @@ class VKuser:
             # проверка на кол-во лайков для выбора названия фото на Я.Диске
             if self.get_profile_photos_url()[photo][1] in list_of_likes:
                 # слэш приходится менять на точку для того, чтобы имя файла было допустимым
-                print(time.strftime("%D", (time.localtime(self.get_profile_photos_url()[photo][2]))).replace("/","."))
+                # print(time.strftime("%D", (time.localtime(self.get_profile_photos_url()[photo][2]))).replace("/","."))
                 # параметры, если кол-во лайков совпадает
                 params = {'url': f'{self.get_profile_photos_url()[photo][0]}',
                           'path': f'/{self.vk_id}/{time.strftime("%D", (time.localtime(self.get_profile_photos_url()[photo][2]))).replace("/",".")}.jpeg'}
